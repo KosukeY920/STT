@@ -1,33 +1,39 @@
 //拡張機能のアイコンをクリックしたとき
-chrome.browserAction.onClicked.addListener(function(tab) {
-  
+chrome.action.onClicked.addListener(function(tab){
   genText(tab);
 });
 
-//何も選択しないでコンテキストメニューを表示したとき
-chrome.contextMenus.create({
-  title : "Share to twitter",
-  contexts : ["page"],
-  type : "normal",
-  onclick : function(info, tab){
+// コンテキストメニューがクリックされたときのイベント
+chrome.contextMenus.onClicked.addListener(function(info, tab) {
+  if (info.menuItemId === "NoSelection") {
     genText(tab);
-  }
-})
-
-//文字を選択してコンテキストメニューを表示したとき
-chrome.contextMenus.create({
-  title : "Share to twitter",
-  contexts : ["selection"],
-  type : "normal",
-  onclick : function(info, tab){
+  } else if (info.menuItemId === "Selection") {
     genQuoteText(info, tab);
   }
-})
+});
 
+// 既存のコンテキストメニューを全て削除
+chrome.contextMenus.removeAll(function() {
+  //何も選択しない場合のコンテキストメニュー
+  chrome.contextMenus.create({
+    id: "NoSelection",
+    title : "Share to twitter",
+    contexts : ["page"],
+    type : "normal"
+  });
+
+  //文字を選択した場合のコンテキストメニュー
+  chrome.contextMenus.create({
+    id: "Selection",
+    title : "Share to twitter",
+    contexts : ["selection"],
+    type : "normal"
+  });
+});
 //何も選択してない時のテキスト
 function genText(tab){
   var strtmp = getLen(tab.title);
-  MAX_LENGTH = 257;
+  const MAX_LENGTH = 257;
   if(strtmp.strLength >= MAX_LENGTH){
     var text = cutStr(tab.title, strtmp.strArray, strtmp.strLength);
   }else{
@@ -40,7 +46,7 @@ function genText(tab){
 //文字数がオーバーしそうなときは末尾を切り捨てる
 function genQuoteText(info, tab){
   var strtmp = getLen(info.selectionText);
-  MAX_LENGTH = 255;
+  const MAX_LENGTH = 255;
   if(strtmp.strLength >= MAX_LENGTH){
     var text = "\"" + cutStr(info.selectionText, strtmp.strArray, strtmp.strLength) + "\"";
   }else{
@@ -56,7 +62,8 @@ function genURL(tab, text){
   title = encodeURI(title);
   let url = '&url=' + tab.url;
   url = encodeURI(url);
-  window.open(template + title + url , 'newtab');
+  let tweetURL = template + title + url;
+  chrome.tabs.create({url: tweetURL});
 }
 
 
